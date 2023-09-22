@@ -1,0 +1,13 @@
+#!/bin/bash -ex
+
+aws s3 cp s3://mpcs-students/wrch0712/gas.zip /home/ubuntu/gas.zip
+unzip /home/ubuntu/gas.zip -d /home/ubuntu/
+chown -R ubuntu:ubuntu /home/ubuntu/gas/
+sudo -u ubuntu /home/ubuntu/gas/ann/run_ann.sh &
+
+# https://docs.aws.amazon.com/cli/latest/reference/s3/cp.html
+# https://www.cyberciti.biz/faq/how-to-unzip-a-zip-file-using-the-linux-and-unix-bash-shell-terminal/
+# https://linuxize.com/post/linux-chown-command/
+# https://edstem.org/us/courses/37929/discussion/3144004b
+
+### EOUserData
