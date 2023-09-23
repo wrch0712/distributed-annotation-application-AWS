@@ -6,7 +6,6 @@ AWS porducts used: EC2, S3, Glacier, DynamoDB, SNS, SQS, Lambda, Step Function
 
 AWS account info is hidden.
 
-***
 ## Project Structure
 Directory contents are as follows:
 * `/web` - The web app files
@@ -14,7 +13,6 @@ Directory contents are as follows:
 * `/util` - Utility scripts/apps for notifications, archival, and restoration
 * `/aws` - AWS user data files
 
-***
 ## Workflow
 ### Submit job
 When an annotation job is submitted in the web server, the web server sends a job request notification to the job requests queue. The annotation server will poll the request queue and deal with the request. When run.py finishes annotation, it will send a job result notification to the job results queue, which is polled by the util server, the notified.py in util server deals with the job result and sends an email to the user indicating the job is completed. When run.py finishes annotation, it will also check the user’s role and call the state machine if it’s a free user. The state machine will wait for 5 minutes and send a job archive notification to the job archive queue. The archive_script.py in util server will poll the archive queue, get the archive message, check the user’s role again and archive the result file from S3 to Glacier if it’s a free user, update the results file archive id to annotation DynamoDB table. The web server is responsible for displaying the job detail, it will get information from the annotation DynamoDB table, displaying different information according to different job status. If the user is a free user and the results file archive id can be found in the annotation DynamoDB table, the web server won’t generate result file download url and display to user.
@@ -22,7 +20,6 @@ When an annotation job is submitted in the web server, the web server sends a jo
 ### User Upgrade:
 When a user subscribes, the web server will collect job information of this user from the annotation DynamoDB table, and send a thawing notification for each archived annotation (in /subscribe route). The thaw SNS sends messages to the thaw SQS directly. The thaw_script.py in the util server polls the thaw queue, and initiates an archive-retrieval job for each thaw message. It first attempts to initiate an expedited retrieval and uses a standard retrieval if it fails. A restore notification will be sent once the thawing is completed (this is done by setting SNSTopic parameter in Glacier.Client.initiate_job method). The restore SNS sends messages to the restore SQS directly, and the restore SQS will trigger a restore Lambda Function ( add SQS as a trigger of Lambda Function). The restore Lambda Function will copy the temporary thawed object to the S3 gas-results bucket, delete the archived object from Glacier, update the annotation DynamoDB table, and delete the message in restore SQS after processing. The web server is responsible for displaying the job detail, it will get information from the annotation DynamoDB table, displaying different information according to different job status. It displays different information for result file based on user’s role and whether the results file archive id can be found in the annotation DynamoDB table.
 
-***
 ## choice of AWS services and reasons
 
 ### Step Function to implement the waiting
